@@ -14,7 +14,7 @@
 #define SSD1306_PSZ 32
 
 // characteristics of each type
-#if !defined (SSD1306_64X32) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64) && !defined (SH1107_128x128)
+#if !defined (SSD1306_64X32) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64) && !defined (SH1107_128x128) && !defined (SH1106_128x64)
 	#error "Please define the SSD1306_WXH resolution used in your application"
 #endif
 
@@ -43,6 +43,15 @@
 #define SSD1306_FULLUSE
 #define SSD1306_W 128
 #define SSD1306_H 128
+#define SSD1306_FULLUSE
+#define SSD1306_OFFSET 0
+#endif
+
+#ifdef SH1106_128x64
+#define SH1106
+#define SSD1306_FULLUSE
+#define SSD1306_W 128
+#define SSD1306_H 64
 #define SSD1306_FULLUSE
 #define SSD1306_OFFSET 0
 #endif
@@ -101,7 +110,7 @@ uint8_t ssd1306_data(uint8_t *data, uint8_t sz)
 // OLED initialization commands for 128x32
 const uint8_t ssd1306_init_array[] =
 {
-#ifdef SH1107
+#if defined(SH1107)
 	SSD1306_DISPLAYOFF,               // Turn OLED off
 	0x00,                             // Low column
 	0x10,                             // High column
@@ -188,14 +197,14 @@ void ssd1306_refresh(void)
 {
 	uint16_t i;
 	
-#ifdef SH1107
+#if defined(SH1107) || defined(SH1106)
 
 	ssd1306_cmd(SSD1306_MEMORYMODE); // vertical addressing mode.
 
 	for(i=0;i<SSD1306_H/8;i++)
 	{
 		ssd1306_cmd(0xb0 | i);
-		ssd1306_cmd( 0x00 | (0&0xf) ); 
+		ssd1306_cmd( 0x00 | (2&0xf) ); 
 		ssd1306_cmd( 0x10 | (0>>4) );
 		ssd1306_data(&ssd1306_buffer[i*4*SSD1306_PSZ+0*SSD1306_PSZ], SSD1306_PSZ);
 		ssd1306_data(&ssd1306_buffer[i*4*SSD1306_PSZ+1*SSD1306_PSZ], SSD1306_PSZ);
