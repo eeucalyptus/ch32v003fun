@@ -14,7 +14,7 @@
 #define SSD1306_PSZ 32
 
 // characteristics of each type
-#if !defined (SSD1306_64X32) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64)
+#if !defined (SSD1306_64X32) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64) && !defined (SH1106_128X64)
 	#error "Please define the SSD1306_WXH resolution used in your application"
 #endif
 
@@ -36,6 +36,14 @@
 #define SSD1306_H 64
 #define SSD1306_FULLUSE
 #define SSD1306_OFFSET 0
+#endif
+
+#ifdef SH1106_128X64
+#define SSD1306_W 128
+#define SSD1306_H 64
+#define SSD1306_FULLUSE
+#define SSD1306_OFFSET 0
+#define SH1106_ADDRESSING
 #endif
 
 /*
@@ -82,6 +90,11 @@ uint8_t ssd1306_data(uint8_t *data, uint8_t sz)
 #define SSD1306_EXTERNALVCC 0x1
 #define SSD1306_SWITCHCAPVCC 0x2
 #define SSD1306_TERMINATE_CMDS 0xFF
+
+#define SH1106_SETLOWCOLUMN 0x00
+#define SH1106_SETHIGHCOLUMN 0x10
+#define SH1106_SETSTARTLINE 0x40
+#define SH1106_SETPAGEADDR 0xB0
 
 /* choose VCC mode */
 #define SSD1306_EXTERNALVCC 0x1
@@ -148,6 +161,7 @@ const uint8_t expand[16] =
 };
 #endif
 
+
 /*
  * Send the frame buffer
  */
@@ -155,6 +169,23 @@ void ssd1306_refresh(void)
 {
 	uint16_t i;
 	
+#ifdef SH1106_ADDRESSING
+	ssd1306_cmd(SH1106_SETSTARTLINE);
+	ssd1306_cmd(SSD1306_SETDISPLAYOFFSET);
+	ssd1306_cmd(0x00);
+
+	i=0;
+	for(int j=0;j<8;j++) {
+		ssd1306_cmd(SH1106_SETPAGEADDR | j);
+		ssd1306_cmd(SH1106_SETLOWCOLUMN|0x02);
+		ssd1306_cmd(SH1106_SETHIGHCOLUMN);
+		for(i;i<(j+1)*(sizeof(ssd1306_buffer)/8);i+=SSD1306_PSZ)
+		{
+			/* send PSZ block of data */
+			ssd1306_data(&ssd1306_buffer[i], SSD1306_PSZ);
+		}
+	}	
+#else
 	ssd1306_cmd(SSD1306_COLUMNADDR);
 	ssd1306_cmd(SSD1306_OFFSET);   // Column start address (0 = reset)
 	ssd1306_cmd(SSD1306_OFFSET+SSD1306_W-1); // Column end address (127 = reset)
@@ -162,7 +193,6 @@ void ssd1306_refresh(void)
 	ssd1306_cmd(SSD1306_PAGEADDR);
 	ssd1306_cmd(0); // Page start address (0 = reset)
 	ssd1306_cmd(7); // Page end address
-
 #ifdef SSD1306_FULLUSE
 	/* for fully used rows just plow thru everything */
     for(i=0;i<sizeof(ssd1306_buffer);i+=SSD1306_PSZ)
@@ -195,6 +225,7 @@ void ssd1306_refresh(void)
 			ssd1306_data(tbuf, SSD1306_PSZ);
 		}
 	}
+#endif
 #endif
 }
 
